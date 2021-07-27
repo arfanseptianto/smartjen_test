@@ -29,7 +29,7 @@ class SchoolController extends Controller
         } catch (\Illuminate\Database\QueryException $ex) {
             return response()->json([
                 'success' => false,
-                $ex->getMessage(),
+                'message' => substr($ex->getMessage(), 0, 97) . '...',
             ]);
         }
     }
