@@ -20,12 +20,10 @@ class CreateUsersTable extends Migration
             $table->string('password');
             $table->tinyInteger('role');
             $table->unsignedBigInteger('school_id');
-            $table->foreign('school_id')
-                ->references('id')
-                ->on('schools')
-                ->onDelete('cascade');
+            $table->foreign('school_id')->references('id')->on('schools')->onDelete('cascade');
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
+            $table->tinyInteger('status')->default(1);
             $table->timestamps();
         });
     }

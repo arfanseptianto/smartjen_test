@@ -8,6 +8,7 @@ use App\Models\School;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 
 class AuthController extends Controller
@@ -28,7 +29,7 @@ class AuthController extends Controller
                 $school->save();
                 $school_id = $school->id;
             } else {
-                $school_id = $request->school_id;
+                $school_id = $school->where('name',$request->school_name)->first()->id;
             }
 
             $user->name = $request->user_name;
@@ -38,69 +39,110 @@ class AuthController extends Controller
             $user->school_id = $school_id;
             $user->save();
 
-            $success = true;
-            $message = 'User register successfully';
+            return response()->json([
+                'success' => true,
+                'message' => 'User register successfully',
+            ]);
         } catch (\Illuminate\Database\QueryException $ex) {
-            $success = false;
-            $message = $ex->getMessage();
+            return response()->json([
+                'success' => false,
+                'message' => substr($ex->getMessage(), 0, 97) . '...',
+                'code' => $ex->getCode(),
+            ]);
         }
-
-        // response
-        $response = [
-            'success' => $success,
-            'message' => $message,
-        ];
-        return response()->json($response);
     }
 
     /**
      * Login
      */
-    public function login(Request $request)
-    {
-        $credentials = [
-            'email' => $request->user_email,
-            'password' => $request->user_password,
-        ];
+    public function login(Request $request) {
+        try {
+            $validate = Validator::make($request->all(), [
+                'email' => 'required',
+                'password' => 'required',
+            ]);
 
-        if (Auth::attempt($credentials)) {
-            $success = true;
-            $message = 'User login successfully';
-        } else {
-            $success = false;
-            $message = 'Unauthorised';
+            if ($validate->fails()) {
+                $respon = [
+                    'success' => 'false',
+                    'message' => 'Please check again your school name, email address, or password'
+                ];
+                return response()->json($respon, 401);
+            } else {
+                $credentials = [
+                    'email' => $request->email,
+                    'password' => $request->password
+                ];
+                // $credentials = Arr::add($credentials, 'status', 'aktif');
+                if (!Auth::attempt($credentials)) {
+                    $respon = [
+                        'success' => 'false',
+                        'message' => 'Please check again your school name, email address, or password'
+                    ];
+                    return response()->json($respon, 401);
+                }
+
+                if(Auth::user()->school->name !== $request->school_name) {
+                    Auth::logout();
+                    $respon = [
+                        'success' => 'false',
+                        'message' => 'Please check again your school name, email address, or password'
+                    ];
+                    return response()->json($respon, 401);
+                } else {
+                    $user = User::where('email', $request->email)->with('school')->first();
+                    if (!Hash::check($request->password, $user->password, [])) {
+                        throw new \Exception('Error in Login');
+                    }
+
+                    $token = $user->createToken('token-auth')->plainTextToken;
+                    $respon = [
+                        'success'   => true,
+                        'data'      => [
+                            'id'        => $user->id,
+                            'name'      => $user->name,
+                            'email'     => $user->email,
+                            'role'      => $user->role,
+                            "school"    => [
+                                'id'        => $user->school->id,
+                                'name'      => $user->school->name,
+                                'address'   => $user->school->address,
+                                'phone'     => $user->school->phone,
+                            ],
+                            'token'     => $token
+                        ],
+                    ];
+                    return response()->json($respon, 200);
+                }
+            }
+        } catch (\Illuminate\Database\QueryException $ex) {
+            return response()->json([
+                'success' => false,
+                'message' => substr($ex->getMessage(), 0, 97) . '...',
+                'code' => $ex->getCode(),
+            ]);
         }
-
-        // response
-        $response = [
-            'success' => $success,
-            'message' => $message,
-        ];
-        return response()->json($response);
     }
 
     /**
      * Logout
      */
-    public function logout(Request $request)
-    {
+    public function logout(Request $request) {
         try {
-            // Session::flush();
-            Auth::logout();
-            $success = true;
-            $message = 'Successfully logged out';
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            $user = $request->user();
+            // $user->currentAccessToken()->delete(); // If prefer to delete current session
+            $user->tokens()->delete();
+            $respon = [
+                'success' => true,
+                'message' => 'Logout successfully',
+            ];
+            return response()->json($respon, 200);
         } catch (\Illuminate\Database\QueryException $ex) {
-            $success = false;
-            $message = $ex->getMessage();
+            return response()->json([
+                'success' => false,
+                'message' => substr($ex->getMessage(), 0, 97) . '...',
+                'code' => $ex->getCode(),
+            ]);
         }
-
-        // response
-        $response = [
-            'success' => $success,
-            'message' => $message,
-        ];
-        return response()->json($response);
     }
 }
