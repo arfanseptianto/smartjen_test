@@ -13,18 +13,11 @@ use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller
 {
-    /**
-     * Get All Users
-     */
     public function get_all_users(Request $request)
     {
         try {
-            $user = User::first();
-            Mail::to($user->email, $user->name)->send(new Mailer($user));
-            
-            $user = User::where('role','<>',1)->where('school_id',$request->user()->school_id)->orderBy('role')->orderBy('id')->get(['id', 'name', 'email', 'role', 'status']);
+            $user = User::where('school_id',$request->user()->school_id)->orderBy('role')->orderBy('id')->get(['id', 'name', 'email', 'role', 'status']);
 
-            //make response JSON
             return response()->json([
                 'success' => true,
                 'message' => 'List All User',
@@ -43,10 +36,7 @@ class AdminController extends Controller
             ]);
         }
     }
-    
-    /**
-     * Add New User
-     */
+
     public function add_new_user(Request $request)
     {
         try {
@@ -73,15 +63,15 @@ class AdminController extends Controller
             $user->school_id = $request->user()->school_id;
             $user->save();
 
-            $details = [
+            $email_data = [
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => $request->password,
                 'role' => $request->role,
                 'school' => School::where('id', $request->user()->school_id)->get(['name']),
             ];
-     var_dump($details);
-            Mail::to($user->email, $user->name)->send(new Mailer($details));
+
+            Mail::to($user->email, $user->name)->send(new Mailer($email_data));
 
             return response()->json([
                 'success' => true,
@@ -92,52 +82,93 @@ class AdminController extends Controller
                 'success' => false,
                 'message' => substr($ex->getMessage(), 0, 97) . '...',
             ]);
-        } catch(\Exception $e){
-            echo "Email gagal dikirim karena $e.";
-        }
-    }
-    
-    /**
-     * Edit User
-     */
-    public function edit_user(Request $request)
-    {
-        try {
-            //get data from table posts
-            $school = School::orderBy('id')->get(['id', 'name', 'address', 'phone']);
-    
-            //make response JSON
-            return response()->json([
-                'success' => true,
-                'message' => 'List All School',
-                'total'   => count($school),
-                'data'    => $school,
-            ], 200);
-        } catch (\Illuminate\Database\QueryException $ex) {
+        } catch(\Exception $ex){
             return response()->json([
                 'success' => false,
                 'message' => substr($ex->getMessage(), 0, 97) . '...',
             ]);
         }
     }
-    
-    /**
-     * Delete User
-     */
-    public function delete_user(Request $request)
+
+    public function edit_user(Request $request, $id)
     {
         try {
-            //get data from table posts
-            $school = School::orderBy('id')->get(['id', 'name', 'address', 'phone']);
-    
-            //make response JSON
+            $validate = Validator::make($request->all(), [
+                'name' => 'required',
+                'email' => 'required|email|unique:users',
+                'password' => 'required|min:6',
+                'role' => 'required|numeric|min:1|max:3',
+            ]);
+
+            if ($validate->fails()) {
+                $respon = [
+                    'success' => 'false',
+                    'message' => $validate->errors()
+                ];
+                return response()->json($respon, 401);
+            }
+
+            $user = User::findOrFail($id);
+
+            if($user) {
+                $user->update([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password' => $request->password,
+                    'role' => $request->role,
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'User Updated',
+                    'data'    => $user  
+                ], 200);
+
+            }
+
             return response()->json([
-                'success' => true,
-                'message' => 'List All School',
-                'total'   => count($school),
-                'data'    => $school,
-            ], 200);
+                'success' => false,
+                'message' => 'User Not Found',
+            ], 404);
         } catch (\Illuminate\Database\QueryException $ex) {
+            return response()->json([
+                'success' => false,
+                'message' => substr($ex->getMessage(), 0, 97) . '...',
+            ]);
+        } catch(\Exception $ex){
+            return response()->json([
+                'success' => false,
+                'message' => substr($ex->getMessage(), 0, 97) . '...',
+            ]);
+        }
+
+    }
+
+    public function delete_user($id)
+    {
+        try {
+            $user = User::findOrfail($id);
+
+            if($user) {
+                $user->delete();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'User Deleted',
+                ], 200);
+
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'User Not Found',
+            ], 404);
+        } catch (\Illuminate\Database\QueryException $ex) {
+            return response()->json([
+                'success' => false,
+                'message' => substr($ex->getMessage(), 0, 97) . '...',
+            ]);
+        } catch(\Exception $ex){
             return response()->json([
                 'success' => false,
                 'message' => substr($ex->getMessage(), 0, 97) . '...',

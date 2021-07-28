@@ -2,24 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
-// use Session;
-use App\Models\User;
+use App\Http\Controllers\Controller;
 use App\Models\School;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 
 class SchoolController extends Controller
 {
-    /**
-     * Get All Schools
-     */
-    public function get_all(Request $request)
+    public function get_all_school(Request $request)
     {
         try {
-            //get data from table posts
-            $school = School::orderBy('id')->get(['id', 'name', 'address', 'phone']);
-    
-            //make response JSON
+            $school = School::orderBy('id')->get(['id', 'name']);
+
             return response()->json([
                 'success' => true,
                 'message' => 'List All School',
@@ -27,6 +20,11 @@ class SchoolController extends Controller
                 'data'    => $school,
             ], 200);
         } catch (\Illuminate\Database\QueryException $ex) {
+            return response()->json([
+                'success' => false,
+                'message' => substr($ex->getMessage(), 0, 97) . '...',
+            ]);
+        } catch(\Exception $ex){
             return response()->json([
                 'success' => false,
                 'message' => substr($ex->getMessage(), 0, 97) . '...',

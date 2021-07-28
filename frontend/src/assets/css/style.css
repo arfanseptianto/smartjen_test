@@ -1,0 +1,32 @@
+#loader {
+    background: var(--bs-light);
+    opacity: 0.85;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    text-align: center;
+    display: none;
+}
+
+.show-loader #loader {
+    display: flex;
+    flex-direction: column;
+}
+
+#loader .spinner {
+    margin: auto auto 0;
+    width: 4rem;
+    height: 4rem;
+    border-width: 0.7rem;
+}
+
+#loader .spinner-text {
+    margin: 0 auto auto;
+}
+
+.form-text {
+    font-size: 0.7em !important;
+    margin: 0 0.4em !important;
+}

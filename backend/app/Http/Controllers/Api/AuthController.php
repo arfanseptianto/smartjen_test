@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-// use Session;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\School;
@@ -13,16 +12,11 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    /**
-     * Signup
-     */
     public function signup(Request $request)
     {
         try {
             $validate = Validator::make($request->all(), [
                 'school_name' => 'required',
-                'school_address' => 'required',
-                'school_phone' => 'required',
                 'user_name' => 'required',
                 'user_email' => 'required|email|unique:users,email',
                 'user_password' => 'required|min:6',
@@ -42,8 +36,8 @@ class AuthController extends Controller
 
             if(!$school->where('name',$request->school_name)->exists()){
                 $school->name = $request->school_name;
-                $school->address = $request->school_address;
-                $school->phone = $request->school_phone;
+                $school->address = '';
+                $school->phone = '';
                 $school->save();
                 $school_id = $school->id;
             } else {
@@ -66,13 +60,16 @@ class AuthController extends Controller
                 'success' => false,
                 'message' => substr($ex->getMessage(), 0, 97) . '...',
             ]);
+        } catch(\Exception $ex){
+            return response()->json([
+                'success' => false,
+                'message' => substr($ex->getMessage(), 0, 97) . '...',
+            ]);
         }
     }
 
-    /**
-     * Login
-     */
-    public function login(Request $request) {
+    public function login(Request $request)
+    {
         try {
             $validate = Validator::make($request->all(), [
                 'email' => 'required|email',
@@ -139,13 +136,16 @@ class AuthController extends Controller
                 'message' => substr($ex->getMessage(), 0, 97) . '...',
                 'code' => $ex->getCode(),
             ]);
+        } catch(\Exception $ex){
+            return response()->json([
+                'success' => false,
+                'message' => substr($ex->getMessage(), 0, 97) . '...',
+            ]);
         }
     }
 
-    /**
-     * Logout
-     */
-    public function logout(Request $request) {
+    public function logout(Request $request)
+    {
         try {
             $user = $request->user();
             // $user->currentAccessToken()->delete(); // If prefer to delete current session
@@ -160,6 +160,11 @@ class AuthController extends Controller
                 'success' => false,
                 'message' => substr($ex->getMessage(), 0, 97) . '...',
                 'code' => $ex->getCode(),
+            ]);
+        } catch(\Exception $ex){
+            return response()->json([
+                'success' => false,
+                'message' => substr($ex->getMessage(), 0, 97) . '...',
             ]);
         }
     }
