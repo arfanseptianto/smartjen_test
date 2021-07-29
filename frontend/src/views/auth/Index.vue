@@ -66,10 +66,12 @@
                             </button>
                         </form>
                         <hr class="my-4" />
-                        <small class="text-muted"
-                            >Don't have an account?
-                            <a href="/" :tabindex="processing ? '-1' : ''">Signup</a></small
-                        >
+                        <small class="text-muted">
+                            Don't have an account?
+                            <router-link :to="{ name: 'home' }" :tabindex="processing ? '-1' : ''">
+                                Signup
+                            </router-link>
+                        </small>
                     </div>
                     <div id="loader">
                         <div class="spinner spinner-border" role="status"></div>
@@ -124,7 +126,11 @@ export default {
         return {
             loggedIn: localStorage.getItem('loggedIn'),
             token: localStorage.getItem('token'),
-            user: [],
+            user: {
+                name: localStorage.getItem('user_name'),
+                role: localStorage.getItem('user_role'),
+                school_name: localStorage.getItem('user_school_name')
+            },
             school: [],
             validation: [],
             loginFailed: null,
@@ -168,7 +174,11 @@ export default {
                                 localStorage.setItem('user_role', res.data.data.role)
                                 localStorage.setItem('user_school_name', res.data.data.school_name)
                                 this.loggedIn = true
-                                return this.$router.push({ name: 'dashboard' })
+                                if (res.data.data.role == 1) {
+                                    return this.$router.push({ name: 'dashboard' })
+                                } else {
+                                    return this.$router.push({ name: 'school' })
+                                }
                             }
                         })
                         .catch(error => {
@@ -203,8 +213,10 @@ export default {
         }
     },
     mounted() {
-        if (this.loggedIn) {
+        if (this.loggedIn && this.user.role == 1) {
             return this.$router.push({ name: 'dashboard' })
+        } else if (this.loggedIn && this.user.role != 1) {
+            return this.$router.push({ name: 'school' })
         }
         this.toast = new Toast(this.$refs.toaster)
         this.getSchoolsList()

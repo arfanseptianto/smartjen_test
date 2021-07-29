@@ -63,7 +63,8 @@
                                                     ><button
                                                         class="btn btn-warning btn-sm"
                                                         v-bind:data-user="JSON.stringify(user)"
-                                                        @click="deleteUser"
+                                                        @click="showDeleteModal(user.id)"
+                                                        :ref="'deleteModalToggle' + user.id"
                                                     >
                                                         <i class="bi-trash"></i>
                                                     </button>
@@ -317,6 +318,99 @@
             </div>
         </div>
 
+        <!-- Modal Delete -->
+        <div
+            class="modal fade"
+            id="modalUserDelete"
+            ref="modalUserDelete"
+            data-bs-backdrop="static"
+            data-bs-keyboard="false"
+            tabindex="-1"
+            aria-labelledby="modalUserDeleteLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form
+                        class="position-relative"
+                        :class="{ 'show-loader': processing }"
+                        @submit.prevent="deleteUser"
+                    >
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalUserDeleteLabel">Remove Member</h5>
+                            <button
+                                type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"
+                                :disabled="processing"
+                            ></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-floating mb-3">
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="deleteRole"
+                                    placeholder="Role"
+                                    :value="
+                                        modalDeleteData.role == 1
+                                            ? 'Admin'
+                                            : modalDeleteData.role == 2
+                                            ? 'Teacher'
+                                            : modalDeleteData.role == 3
+                                            ? 'Student'
+                                            : '-'
+                                    "
+                                    disabled
+                                />
+                                <label for="name">Role</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="deleteName"
+                                    placeholder="Your name"
+                                    v-model="modalDeleteData.name"
+                                    disabled
+                                />
+                                <label for="name">Your name</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input
+                                    type="email"
+                                    class="form-control"
+                                    id="deleteEmail"
+                                    placeholder="name@example.com"
+                                    v-model="modalDeleteData.email"
+                                    disabled
+                                />
+                                <label for="email">Email address</label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                data-bs-dismiss="modal"
+                                :disabled="processing"
+                            >
+                                Cancel
+                            </button>
+                            <button class="btn btn-primary" type="submit" :disabled="processing">
+                                Remove
+                            </button>
+                        </div>
+                        <div id="loader">
+                            <div class="spinner spinner-border" role="status"></div>
+                            <div class="spinner-text">Processing...</div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Toast -->
         <div class="position-fixed top-0 end-0 p-3 mt-5" style="z-index: 1070">
             <div id="liveToast" ref="toaster" class="toast hide">
@@ -374,6 +468,8 @@ export default {
             modalAddData: [],
             modalEdit: null,
             modalEditData: [],
+            modalDelete: null,
+            modalDeleteData: [],
             validation: [],
             processing: false,
             fetching: false,
@@ -385,19 +481,6 @@ export default {
     created() {},
 
     methods: {
-        logout() {
-            axios
-                .get('http://localhost:8000/api/logout', {
-                    headers: { Authorization: 'Bearer ' + this.token }
-                })
-                .then(() => {
-                    //remove localStorage
-                    localStorage.removeItem('loggedIn')
-
-                    //redirect
-                    return this.$router.push({ name: 'home' })
-                })
-        },
         getUsers() {
             this.fetching = true
             axios
@@ -436,6 +519,13 @@ export default {
             var target = this.$refs['editModalToggle' + id]
             this.modalEditData = JSON.parse(target.dataset.user)
             this.modalEdit.show()
+        },
+        showDeleteModal(id) {
+            this.validation = []
+            this.modalDeleteData = []
+            var target = this.$refs['deleteModalToggle' + id]
+            this.modalDeleteData = JSON.parse(target.dataset.user)
+            this.modalDelete.show()
         },
         addUser() {
             this.processing = true
@@ -555,8 +645,7 @@ export default {
                         this.toastData = {
                             type: 'error',
                             title: 'Update Error',
-                            text:
-                                'Please check again the role, name, email address or password.'
+                            text: 'Please check again the role, name, email address or password.'
                         }
                         this.toast.show()
                         this.processing = false
@@ -566,19 +655,55 @@ export default {
             }
         },
         deleteUser() {
-            //
+            this.processing = true
+            axios
+                .post(
+                    'http://localhost:8000/api/admin/delete_user/' + this.modalDeleteData.id,
+                    null,
+                    {
+                        headers: { Authorization: 'Bearer ' + this.token }
+                    }
+                )
+                .then(res => {
+                    if (res.data.success) {
+                        this.toastData = {
+                            type: 'success',
+                            title: 'Member Removed',
+                            text: 'Successfully removed member from your school'
+                        }
+                        this.toast.show()
+                        this.modalDelete.hide()
+                        this.processing = false
+                        this.getUsers()
+                    }
+                })
+                .catch(error => {
+                    // if (error.response.data.success == 'false') {
+                    // }
+                    console.log(error.response.data)
+                    this.toastData = {
+                        type: 'error',
+                        title: 'Remove Error',
+                        text:
+                            error.response.data.message ||
+                            'Please check your internet connection and try again.'
+                    }
+                    this.toast.show()
+                    this.processing = false
+                })
         }
     },
 
     //check user logged in or not
     mounted() {
-        if (!this.loggedIn) {
+        if (!this.loggedIn || this.user.role != 1) {
             return this.$router.push({ name: 'home' })
         }
         this.getUsers()
         this.toast = new Toast(this.$refs.toaster)
         this.modalAdd = new Modal(this.$refs.modalUserAdd)
         this.modalEdit = new Modal(this.$refs.modalUserEdit)
+        this.modalDelete = new Modal(this.$refs.modalUserDelete)
     }
 }
 </script>

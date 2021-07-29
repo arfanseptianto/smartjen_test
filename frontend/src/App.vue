@@ -55,7 +55,7 @@ export default {
                 })
                 .then(() => {
                     //remove localStorage
-                    localStorage.removeItem('loggedIn')
+                    localStorage.clear()
 
                     //redirect
                     return this.$router.push({ name: 'home' })

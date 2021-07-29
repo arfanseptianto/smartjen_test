@@ -72,8 +72,10 @@
                         <hr class="my-4" />
                         <small class="text-muted">
                             Already have an account?
-                            <a href="/login" :tabindex="processing ? '-1' : ''">Login</a></small
-                        >
+                            <router-link :to="{ name: 'login' }" :tabindex="processing ? '-1' : ''">
+                                Login
+                            </router-link>
+                        </small>
                         <div id="loader">
                             <div class="spinner spinner-border" role="status"></div>
                             <div class="spinner-text">Processing...</div>
@@ -128,7 +130,11 @@ export default {
         return {
             loggedIn: localStorage.getItem('loggedIn'),
             token: localStorage.getItem('token'),
-            user: [],
+            user: {
+                name: localStorage.getItem('user_name'),
+                role: localStorage.getItem('user_role'),
+                school_name: localStorage.getItem('user_school_name')
+            },
             school: [],
             validation: [],
             loginFailed: null,
@@ -245,8 +251,10 @@ export default {
         }
     },
     mounted() {
-        if (this.loggedIn) {
+        if (this.loggedIn && this.user.role == 1) {
             return this.$router.push({ name: 'dashboard' })
+        } else if (this.loggedIn && this.user.role != 1) {
+            return this.$router.push({ name: 'school' })
         }
         this.toast = new Toast(this.$refs.toaster)
         // this.getSchoolsList();

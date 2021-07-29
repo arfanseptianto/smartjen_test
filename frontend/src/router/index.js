@@ -19,6 +19,11 @@ const routes = [
         name: 'dashboard',
         component: () => import( /* webpackChunkName: "Auth" */ "@/views/dashboard/Index"),
     },
+    {
+        path: '/school',
+        name: 'school',
+        component: () => import( /* webpackChunkName: "Auth" */ "@/views/school/Index"),
+    },
 ]
 
 //create router
