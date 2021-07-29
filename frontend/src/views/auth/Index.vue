@@ -165,6 +165,8 @@ export default {
                                 localStorage.setItem('loggedIn', 'true')
                                 localStorage.setItem('token', res.data.data.token)
                                 localStorage.setItem('user_name', res.data.data.name)
+                                localStorage.setItem('user_role', res.data.data.role)
+                                localStorage.setItem('user_school_name', res.data.data.school_name)
                                 this.loggedIn = true
                                 return this.$router.push({ name: 'dashboard' })
                             }

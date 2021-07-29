@@ -30,3 +30,7 @@
     font-size: 0.7em !important;
     margin: 0 0.4em !important;
 }
+
+.dropdown-toggle.icon-only::after {
+    display: none !important;
+}

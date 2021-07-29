@@ -115,16 +115,9 @@ class AuthController extends Controller
             $respon = [
                 'success'   => true,
                 'data'      => [
-                    'id'        => $user->id,
                     'name'      => $user->name,
-                    'email'     => $user->email,
                     'role'      => $user->role,
-                    "school"    => [
-                        'id'        => $user->school->id,
-                        'name'      => $user->school->name,
-                        'address'   => $user->school->address,
-                        'phone'     => $user->school->phone,
-                    ],
+                    'school_name'      => $user->school->name,
                     'token'     => $token
                 ],
             ];

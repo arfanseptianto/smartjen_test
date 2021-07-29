@@ -16,7 +16,7 @@ class AdminController extends Controller
     public function get_all_users(Request $request)
     {
         try {
-            $user = User::where('school_id',$request->user()->school_id)->orderBy('role')->orderBy('id')->get(['id', 'name', 'email', 'role', 'status']);
+            $user = User::where('school_id',$request->user()->school_id)->where('role', '!=', 1)->orderBy('role')->orderBy('id')->get(['id', 'name', 'email', 'role', 'status']);
 
             return response()->json([
                 'success' => true,
@@ -95,9 +95,9 @@ class AdminController extends Controller
         try {
             $validate = Validator::make($request->all(), [
                 'name' => 'required',
-                'email' => 'required|email|unique:users',
-                'password' => 'required|min:6',
-                'role' => 'required|numeric|min:1|max:3',
+                // 'email' => 'required|email',
+                // 'password' => 'required|min:6',
+                // 'role' => 'required|numeric|min:1|max:3',
             ]);
 
             if ($validate->fails()) {
@@ -113,9 +113,9 @@ class AdminController extends Controller
             if($user) {
                 $user->update([
                     'name' => $request->name,
-                    'email' => $request->email,
-                    'password' => $request->password,
-                    'role' => $request->role,
+                    // 'email' => $request->email,
+                    // 'password' => $request->password,
+                    // 'role' => $request->role,
                 ]);
 
                 return response()->json([
